@@ -1,0 +1,31 @@
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.env
+
+# Python
+venv/
+env/
+ENV/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.ipynb_checkpoints/
+
+# Project Specific
+backend/uploads/*
+!backend/uploads/.gitkeep
+ai-service/temp_faces/*
+!ai-service/temp_faces/.gitkeep
+
+# System Files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# DeepFace Local Weights (Standard location is in User folder, but just in case)
+.deepface/

@@ -1,0 +1,27 @@
+version: '3.8'
+
+services:
+  # Main Node.js Backend
+  api:
+    build: 
+      context: .
+      dockerfile: backend.Dockerfile
+    ports:
+      - "5000:5000"
+    environment:
+      - AI_SERVICE_URL=http://ai:5001/verify
+    depends_on:
+      - ai
+
+  # Python AI Service
+  ai:
+    build:
+      context: ./ai-service
+      dockerfile: Dockerfile
+    ports:
+      - "5001:5001"
+    volumes:
+      - deepface_weights:/root/.deepface/weights
+
+volumes:
+  deepface_weights:
