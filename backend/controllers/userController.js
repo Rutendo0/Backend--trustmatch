@@ -60,7 +60,19 @@ exports.verifyFace = async (req, res) => {
     const img1 = req.files.img1[0];
     const img2 = req.files.img2[0];
 
-    const aiServiceUrl = process.env.AI_SERVICE_URL || 'http://localhost:5001/verify';
+    // Validate image files are non-empty
+    const fsSize1 = fs.statSync(img1.path).size;
+    const fsSize2 = fs.statSync(img2.path).size;
+    if (fsSize1 === 0 || fsSize2 === 0) {
+      try { fs.unlinkSync(img1.path); } catch {}
+      try { fs.unlinkSync(img2.path); } catch {}
+      return res.status(400).json({ error: "One or both images are empty" });
+    }
+
+    const aiServiceUrl = process.env.AI_SERVICE_URL || 'http://ai:5000/verify';
+    console.log(`[verify-face] img1: ${img1.originalname} (${img1.size} bytes, ${img1.mimetype})`);
+    console.log(`[verify-face] img2: ${img2.originalname} (${img2.size} bytes, ${img2.mimetype})`);
+    console.log(`[verify-face] AI service URL: ${aiServiceUrl}`);
 
     // Retry logic — rebuild FormData each attempt since streams can't be reused
     let lastError;
@@ -77,18 +89,36 @@ exports.verifyFace = async (req, res) => {
         });
 
         const response = await axios.post(aiServiceUrl, formData, {
-          headers: formData.getHeaders(),
+          headers: {
+            ...formData.getHeaders(),
+            'Connection': 'keep-alive',
+          },
           timeout: 60000,
         });
+
+        const data = response.data;
+
+        // Log verification result for debugging
+        console.log("Face verification result:", JSON.stringify({
+          verified: data.verified,
+          distance: data.distance,
+          threshold: data.threshold,
+          similarity: data.similarity,
+          model: data.model,
+          match: data.match,
+          modelLoaded: data.model_loaded,
+        }));
 
         // Clean up uploaded files
         try { fs.unlinkSync(img1.path); } catch {}
         try { fs.unlinkSync(img2.path); } catch {}
 
-        return res.json(response.data);
+        return res.json(data);
       } catch (error) {
         lastError = error;
         const status = error.response?.status;
+        const errorDetail = error.response?.data || error.message;
+        console.error(`AI service attempt ${attempt} failed:`, { status, error: errorDetail });
         if (status !== 404 && status !== 503 && status !== 502) {
           throw error; // Non-retryable error
         }

@@ -3,7 +3,7 @@ version: '3.8'
 services:
   # Main Node.js Backend
   api:
-    build: 
+    build:
       context: .
       dockerfile: backend.Dockerfile
     ports:
@@ -12,10 +12,12 @@ services:
       - .env
     environment:
       - AI_SERVICE_URL=http://ai:5000/verify
+      - NODE_ENV=production
     depends_on:
       ai:
         condition: service_healthy
-
+      db:
+        condition: service_healthy
 
   # Python AI Service
   ai:
@@ -26,14 +28,26 @@ services:
       - "5001:5000"
     environment:
       - PORT=5000
+      - PYTHONUNBUFFERED=1
     volumes:
       - deepface_weights:/root/.deepface/weights
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:5000/"]
       interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
+      timeout: 180s
+      retries: 5
+      start_period: 120s
+
+  db:
+    image: neon.tech/neondb:latest
+    # or use postgres as a sidecar if needed
+    environment:
+      POSTGRES_URL: ${DATABASE_URL}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
 volumes:
   deepface_weights:
