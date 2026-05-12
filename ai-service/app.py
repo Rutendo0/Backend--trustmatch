@@ -28,7 +28,7 @@ def normalize_image(path):
 @app.route('/', methods=['GET'])
 def health_check():
     try:
-        DeepFace.represent(np.zeros((224,224,3), dtype=np.uint8), model_name="VGG-Face", enforce_detection=False)
+        DeepFace.represent(np.zeros((224,224,3), dtype=np.uint8), model_name="ArcFace", enforce_detection=False)
         return jsonify({"status": "AI Service ready", "service": "DeepFace Face Verification", "deepface": "ready"}), 200
     except:
         return jsonify({"status": "AI Service starting - DeepFace initializing...", "service": "DeepFace Face Verification"}), 503
@@ -56,9 +56,9 @@ def verify_faces():
         result = DeepFace.verify(
             img1_path=path1,
             img2_path=path2,
-            model_name="VGG-Face",
+            model_name="ArcFace",
             enforce_detection=False,
-            detector_backend="mtcnn"  # more accurate face detector than default opencv
+            detector_backend="mtcnn"
         )
 
         os.remove(path1)
